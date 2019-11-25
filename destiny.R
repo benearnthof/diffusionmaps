@@ -3,8 +3,9 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 BiocManager::install("destiny")
 
 library(destiny)
-# zunder <- read.ExpressionSet("zunder.tab")
-# dm <- DiffusionMap(zunder, k = 1000)
+# https://www.helmholtz-muenchen.de/fileadmin/ICB/software/destiny/zunder.tab.gz
+zunder <- read.ExpressionSet("zunder.tab")
+dm_zunder <- DiffusionMap(zunder, k = 100)
 # plot(dm, c(2,5,-1), col.by = "Days", pal = blue2green2red(20))
 # takes forever on my shitty laptop
 
@@ -17,3 +18,7 @@ plot(dm)
 palette(cube_helix(6))
 plot(dm, col_by = "num_cells", legend_main = "Cell stage")
 # works
+
+covars <- data.frame(covar1 = letters[1:100])
+dists <- dist(matrix(rnorm(100*10), 100))
+dm_letters <- DiffusionMap(covars, distance = dists)
