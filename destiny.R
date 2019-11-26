@@ -42,3 +42,17 @@ library(circlize)
 col_fun = colorRamp2(c(-0.1, 0, 0.1), c("darkblue","white", "red"), transparency = 0.5)
 Heatmap(cov, name = "Covariance", col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,
         show_row_names = FALSE, show_column_names = FALSE)
+
+theta <- seq(from = 0, to = 4*pi, by = pi/29)
+x <- 2 * cos(theta)
+y <- 2 * sin(theta)
+z <- theta
+plot(x ~ y)
+library(scatterplot3d)
+df <- data.frame(x = x, y = y, z = z)
+scatterplot3d(df)
+
+install.packages("plotly")
+library(plotly)
+p <- plot_ly(df, x = ~x, y = ~y, z = ~z)
+p
