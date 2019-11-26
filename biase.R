@@ -23,3 +23,9 @@ saveRDS(sceset, "biase.rds")
 require(destiny)
 dm <- DiffusionMap(sceset, n_pcs = 50)
 plot(dm)
+
+# lets try other package
+df <- sceset@assays@data@listData$normcounts
+D <- dist(df)
+dm <- diffuse(D)
+# uses 50 GB of RAM lmao
