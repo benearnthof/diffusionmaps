@@ -52,7 +52,7 @@ train$y = as.factor(load_label_file("train-labels-idx1-ubyte"))
 test$y  = as.factor(load_label_file("t10k-labels-idx1-ubyte"))
 
 # view test image
-show_digit(train[1, ])
+show_digit(train[123, ])
 
 # testing classification on subset of training data
 fit = randomForest::randomForest(y ~ ., data = train[1:1000, ])
@@ -61,3 +61,34 @@ test_pred = predict(fit, test)
 mean(test_pred == test$y)
 table(predicted = test_pred, actual = test$y)
 
+dta <- test[,1:784]
+dta <- test
+dta <- dta[1:500,]
+
+library(destiny)
+library(diffusionMap)
+
+D <- stats::dist(dta)
+dm <- diffuse(D, t = 10)
+plot(dm)
+
+type = test$y[1:500]
+df <- data.frame(x = dm$X[,1], y = dm$X[,2], z = dm$X[,3], type = type)
+plot_ly(df, x = ~x, y = ~y, z = ~z, marker = list(color = ~type, colorscale = "Viridis", name = ~type)) %>%
+  add_markers()
+
+
+
+dm <- DiffusionMap(dta[1:10,], dist = D, sigma = "local")
+data(guo)
+guo
+require(Biobase)
+object <- new("ExpressionSet", exprs = as.matrix(dta))
+
+dm <- DiffusionMap(object, k = 49)
+require(colorRamps)
+plot(dm, col.by = "y", pal = blue2green2red(10))
+
+dc <- data.frame(DC2 = dm$DC2, DC1 = dm$DC1, DC3 = dm$DC3, type = type)
+plot_ly(dc, x = ~DC1, y = ~DC2, z = ~DC3, marker = list(color = ~type, colorscale = c('#FFE1A1', '#683531'))) %>%
+  add_markers()
