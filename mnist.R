@@ -92,3 +92,45 @@ plot(dm, col.by = "y", pal = blue2green2red(10))
 dc <- data.frame(DC2 = dm$DC2, DC1 = dm$DC1, DC3 = dm$DC3, type = type)
 plot_ly(dc, x = ~DC1, y = ~DC2, z = ~DC3, marker = list(color = ~type, colorscale = c('#FFE1A1', '#683531'))) %>%
   add_markers()
+
+library(readr)
+library(Rtsne)
+
+
+# The competition datafiles are in the directory ../input
+# Read competition data files:
+
+train$y <- as.factor(train$y)
+
+# shrinking the size for the time limit
+numTrain <- 5000
+set.seed(1)
+rows <- sample(1:nrow(train), numTrain)
+train2 <- train[rows,]
+# using tsne
+set.seed(1) # for reproducibility
+tsne <- Rtsne(train2[,-785], dims = 3, perplexity=30, verbose=TRUE, max_iter = 500)
+# visualizing
+colors = rainbow(length(unique(train2$y)))
+names(colors) = unique(train2$y)
+      plot(tsne$Y, t='n', main="tsne")
+      text(tsne$Y, labels=train2$y, col=colors[train2$y])
+
+  # compare with pca
+pca = princomp(train2[,-785])$scores[,1:2]
+plot(pca, t='n', main="pca")
+text(pca, labels=train2$y,col=colors[train2$y])
+
+library(scatterplot3d)
+
+scatterplot3d(x=tsne$Y[,1],y=tsne$Y[,2],z=tsne$Y[,3],
+              color = colors[train2$y])
+
+library(rgl)
+library(magick)
+
+open3d()
+par3d(windowRect = c(20, 30, 500, 500))
+plot3d(x=tsne$Y[,1],y=tsne$Y[,2],z=tsne$Y[,3], 
+       col=colors[train2$y], type="s",radius=0.5, xlab = "", ylab = "", zlab = "")
+movie3d(spin3d(axis = c(1, 1, 1), rpm = 2), duration = 30, dir = getwd(), )
