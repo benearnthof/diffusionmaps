@@ -297,7 +297,7 @@ mclust::adjustedRandIndex(truth, res_2)
 
 # truth und k_true sind die vorliegenden Zelltypen sowie die jeweilige vorliegende Anzahl Kategorien von Zelltypen des jeweiligen Datensatzes
 
-BiocManager::install("ConsensusClusterPlus")
+# BiocManager::install("ConsensusClusterPlus")
 library(ConsensusClusterPlus)
 # input data format is a matrix where columns are samples and rows are features
 # in this case the columns are the cells, the rows are the reduced dimensions
@@ -360,3 +360,29 @@ mclust::adjustedRandIndex(truth, tmp)
 # repeat consensus clustering 100 times each 
 # calculate ARI for everything
 # plot results in pretty boxplot
+
+dataset <- biase_3_filtered_chosen
+
+# do methods of dim reduction and save 50 dimensions
+# should all have the same structure
+library(RDRToolbox) # for isomap
+
+difres <- destiny::DiffusionMap(dataset, n_eigs = 25)@eigenvectors
+rownames(difres) <- colData(dataset)$cell_type1
+difres <- t(difres)
+
+pcares <- reducedDim(scater::runPCA(dataset, ncomponents = 25))
+rownames(pcares) <- colData(dataset)$cell_type1
+pcares <- t(pcares)
+
+isodata <- assays(dataset)$logcounts
+isodata <- t(isodata)
+isolabs <- colData(dataset)$cell_type1
+
+isores <- RDRToolbox::Isomap(data = isodata, dims = 25, k = 10)
+isores <- as.matrix(isores$dim25)
+rownames(isores) <- simLabels
+isores <- t(isores)
+
+lapply(list(difres, pcares, isores), head2d, n = c(5,5))
+# 3 matrices with the needed structure

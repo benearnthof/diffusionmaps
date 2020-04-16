@@ -16,7 +16,7 @@ simData <- assays(biase_3_filtered_chosen)$logcounts
 simData <- t(simData)
 simLabels <- colData(biase_3_filtered_chosen)$cell_type1
 
-res2 <- Isomap(data = simData, dims = 2, k = 10)
+res2 <- Isomap(data = simData, dims = 25, k = 10)
 res2 <- as.data.frame.matrix(res2$dim2)
 res2$class <- as.factor(simLabels)
 
