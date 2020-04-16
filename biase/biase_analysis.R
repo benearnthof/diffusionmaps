@@ -367,22 +367,123 @@ dataset <- biase_3_filtered_chosen
 # should all have the same structure
 library(RDRToolbox) # for isomap
 
+test <- "cell_type1"
+labs <- subset(colData(dataset), select = test)[,1]
+
 difres <- destiny::DiffusionMap(dataset, n_eigs = 25)@eigenvectors
-rownames(difres) <- colData(dataset)$cell_type1
+rownames(difres) <- labs
 difres <- t(difres)
 
 pcares <- reducedDim(scater::runPCA(dataset, ncomponents = 25))
-rownames(pcares) <- colData(dataset)$cell_type1
+rownames(pcares) <- labs
 pcares <- t(pcares)
 
 isodata <- assays(dataset)$logcounts
 isodata <- t(isodata)
-isolabs <- colData(dataset)$cell_type1
 
 isores <- RDRToolbox::Isomap(data = isodata, dims = 25, k = 10)
 isores <- as.matrix(isores$dim25)
-rownames(isores) <- simLabels
+rownames(isores) <- labs
 isores <- t(isores)
 
 lapply(list(difres, pcares, isores), head2d, n = c(5,5))
 # 3 matrices with the needed structure
+
+# lets wrap that into a function
+dimred_processing <- function(dataset, labs, n = 25) {
+  labs <- subset(colData(dataset), select = labs)[,1]
+  # diffusion mapping
+  difres <- destiny::DiffusionMap(dataset, n_eigs = n)@eigenvectors
+  rownames(difres) <- labs
+  difres <- t(difres)
+  # pca
+  pcares <- reducedDim(scater::runPCA(dataset, ncomponents = n))
+  rownames(pcares) <- labs
+  pcares <- t(pcares)
+  # isomap
+  isodata <- assays(dataset)$logcounts
+  isodata <- t(isodata)
+  isores <- RDRToolbox::Isomap(data = isodata, dims = n, k = 10)
+  isores <- as.matrix(isores[[1]])
+  rownames(isores) <- labs
+  isores <- t(isores)
+  ret <- list(difres = difres, pcares = pcares, isores = isores)
+  return(ret)
+}
+
+dta <- readRDS("biase_filtered_chosen.RDS")
+
+rdims <- dimred_processing(dta, "cell_type1", n = 5)
+
+library(purrr)
+map(rdims, head2d, n = c(5,5))
+
+# now we can use purrs listprocessing to avoid unwrapping lists
+set.seed(1)
+
+truth <- as.factor(colData(dta)$cell_type1)
+
+calc_scores <- function(rdims, nclust, dist = c("euclidean", "pearson", "spearman"),
+                        truth, iters = 25) {
+  scores <- data.frame(difres = rep(0, iters),
+                       pcares = rep(0, iters), 
+                       isores = rep(0, iters))
+  for (i in 1:iters) {
+    # setting pFeatures = 1 so we dont exclude reduced dimensions
+    # setting pItem to 0.8 allows resampling from cells
+    ccp <- map(rdims, ConsensusClusterPlus, maxK = nclust, reps = 5, pItem = 0.8, 
+               pFeature = 0.9, clusterAlg = "kmdist", distance = dist)
+    # getting results for cluster number of interest
+    classes <- map(ccp, `[[`, nclust)
+    classes <- map(classes, `$`, "consensusClass")
+    # calculating scores and storing them
+    score <- map(classes, mclust::adjustedRandIndex, truth)
+    score <- t(as.matrix(score))
+    scores[i,] <- score
+  }
+  return(scores)
+}
+
+biase_eucl <- calc_scores(rdims, 3, dist = "euclidean", truth = truth)
+biase_eucl2 <- calc_scores(rdims, 3, dist = "euclidean", truth = truth)
+biase_eucl3 <- calc_scores(rdims, 3, dist = "euclidean", truth = truth)
+biase_eucl4 <- calc_scores(rdims, 3, dist = "euclidean", truth = truth)
+
+plt_scores <- function(scores) {
+  mlt <- reshape2::melt(scores)
+  plt <- ggplot(mlt, aes(x = variable, y = value, fill = variable)) +
+    geom_boxplot() +
+    xlab("Method") +
+    ylab("Adjusted Rand Index") +
+    ggtitle("Adjusted Rand Index: Biase", subtitle = "Euclidean Distance") +
+    scale_x_discrete(labels = c("difres" = "Diffusion Map", "pcares" = "PCA",
+                                "isores" = "Isomap")) +
+    theme_bw() +
+    theme(legend.position = "none")
+  return(plt)
+}
+
+plt_scores(biase_eucl4)
+
+  
+
+# looks okay so far
+
+
+
+
+scores <- data.frame(difres = rep(0, 25),
+                     pcares = rep(0, 25), 
+                     isores = rep(0, 25))
+for (i in 1:25) {
+  ccp_eucli <- map(rdims, ConsensusClusterPlus, maxK = 3, reps = 5, pItem = 0.8, 
+                   pFeature = 0.8, clusterAlg = "kmdist", distance = "euclidean")
+  classes <- map(ccp_eucli, `[[`, 3)
+  classes <- map(classes, `$`, "consensusClass")
+  
+  score <- map(classes, mclust::adjustedRandIndex, truth)
+  
+  score <- t(as.matrix(score))
+  scores[1,] <- score
+  
+}
