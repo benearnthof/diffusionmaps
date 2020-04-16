@@ -465,25 +465,17 @@ plt_scores <- function(scores) {
 
 plt_scores(biase_eucl4)
 
-  
+biase_spear <- calc_scores(rdims, 3, dist = "spearman", truth = truth)
+plt_scores(biase_spear)
+
+biase_pears <- calc_scores(rdims, 3, dist = "pearson", truth = truth)
+plt_scores(biase_pears)
+
+biase_scores_5dim <- list(eucl = biase_eucl4, spear = biase_spear, pears = biase_pears)
+
+saveRDS(biase_scores_5dim, file = "biase_scores_5dim.RDS")
 
 # looks okay so far
 
 
 
-
-scores <- data.frame(difres = rep(0, 25),
-                     pcares = rep(0, 25), 
-                     isores = rep(0, 25))
-for (i in 1:25) {
-  ccp_eucli <- map(rdims, ConsensusClusterPlus, maxK = 3, reps = 5, pItem = 0.8, 
-                   pFeature = 0.8, clusterAlg = "kmdist", distance = "euclidean")
-  classes <- map(ccp_eucli, `[[`, 3)
-  classes <- map(classes, `$`, "consensusClass")
-  
-  score <- map(classes, mclust::adjustedRandIndex, truth)
-  
-  score <- t(as.matrix(score))
-  scores[1,] <- score
-  
-}
