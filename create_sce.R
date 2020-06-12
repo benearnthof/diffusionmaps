@@ -1,6 +1,6 @@
 library(SingleCellExperiment)
-BiocManager::install("scater")
-BiocManager::install("biomaRt")
+# BiocManager::install("scater")
+# BiocManager::install("biomaRt")
 library(biomaRt)
 library(scater)
 

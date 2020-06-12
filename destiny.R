@@ -26,15 +26,20 @@ plot(dm_letters)
 
 # visualization of the distribution of eigenvalues for a random covariance matrix
 # to get an understanding of spectral decay
-mat <- matrix(nrow = 250, ncol = 250)
-mat[] <- rnorm(250*250)
+mat <- matrix(nrow = 1000, ncol = 1000)
+mat[] <- rnorm(1000*1000)
 cov <- cov(mat)
 eigen(cov)
 eigen <- eigen(cov)
 plot(eigen$values)
 plot(ecdf(eigen$values))
 plot(density(eigen$values))
-hist(eigen$values, breaks = 1000)
+hist(eigen$values, breaks = 100)
+lines(y~x)
+
+devtools::install_github("kassambara/ggcorrplot")
+library(ggcorrplot)
+ggcorrplot(cov)
 
 # BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
@@ -42,6 +47,20 @@ library(circlize)
 col_fun = colorRamp2(c(-0.2, 0, 0.2), c("darkblue","green", "red"), transparency = 0.5)
 Heatmap(cov, name = "Covariance", col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,
         show_row_names = FALSE, show_column_names = FALSE)
+
+x <- seq(from = 0.15, to = 4, length.out = 1000)
+y <- (sqrt(4*x-x^2))/(2*pi*x)
+
+# karsten data from imagereconstruction.R file
+df <- data.frame(val = eigen$values, y = y, x = x)
+ggplot(df, aes(x = val)) +
+  geom_density(color = "blue", size = 1) +
+  # geom_density(aes(x = karsten), color = "green", size = 1) + dominates entire plot
+  geom_line(aes(x = x, y = y), color = "red", size = 1) +
+  theme_bw() +
+  ggtitle("Approx. Dichte der Eigenwerte einer zufälligen Covarianzmatrix (Blau) \n Dichte der Marchenko-Pastur Verteilung (Rot)") +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
 
 theta <- seq(from = 0, to = 4*pi, by = pi/29)
 x <- 2 * cos(theta)
